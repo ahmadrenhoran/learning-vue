@@ -1,174 +1,183 @@
 <script setup>
-    import {
-        onMounted,
-        reactive,
-        ref
-    } from 'vue';
+import { onMounted, reactive, ref } from "vue";
+import PulseLoader from "vue-spinner/src/PulseLoader.vue";
+import axios from "axios";
+import { useRoute, useRouter } from "vue-router";
+import { useToast } from "vue-toastification";
 
-    import PulseLoader from 'vue-spinner/src/PulseLoader.vue';
+// VeeValidate & Yup
+import { useForm, useField } from "vee-validate";
+import * as yup from "yup";
 
-    import axios from 'axios';
-    import {
-        useRoute, useRouter
-    } from 'vue-router';
-import { useToast } from 'vue-toastification';
+const router = useRouter();
+const route = useRoute();
+const jobId = route.params.id;
+const toast = useToast();
 
-    const router = useRouter();
-    const route = useRoute();
-    const jobId = route.params.id;
+const isLoading = ref(false);
 
-    const toast = useToast();
+const schema = yup.object({
+  type: yup.string().required("Job Type is required"),
+  title: yup.string().required("Job Listing Name is required").min(3, "Minimum 3 characters"),
+  description: yup.string().required("Description is required").min(10, "Minimum 10 characters"),
+  salary: yup.string().required("Salary is required"),
+  location: yup.string().required("Location is required"),
+  companyName: yup.string().required("Company Name is required"),
+  companyDescription: yup.string().required("Company Description is required").min(20, "Minimum 20 characters"),
+  contactEmail: yup
+    .string()
+    .email("Invalid email format")
+    .required("Contact Email is required"),
+  contactPhone: yup.string().optional(),
+});
 
-    const job = reactive({
-        type: "",
-        title: "",
-        description: "",
-        salary: "",
-        location: "",
-        company: {
-            name: "",
-            description: "",
-            contactEmail: "",
-            contactPhone: "",
-        }
-    })
-    const isLoading = ref(false);
-    const state = reactive({
-        job: {},
-        isLoading: false,
-    })
 
-    const submit = async () => {
-        try {
-            isLoading.value = true;
-            const response = await axios.put(`http://localhost:5100/jobs/${jobId}`, job);
-            toast.success("Job updated succesfully")
-            router.push(`/jobs/${response.data.id}`);
-        } catch (error) {
-            console.log(error);
-            toast.success("Failed to updating job");
-        } finally {
-            isLoading.value = false;
-        }
-    };
+// Gunakan VeeValidate
+const { handleSubmit } = useForm({
+  validationSchema: schema,
+});
 
-    onMounted(async () => {
-        try {
-            isLoading.value = true;
-            const response = await axios.get(`http://localhost:5100/jobs/${jobId}`);
-            state.job = response.data;
-            job.type = state.job.type;
-            job.title = state.job.title;
-            job.description = state.job.description;
-            job.salary = state.job.salary;
-            job.location = state.job.location;
-            job.company = state.job.company;
-        } catch (error) {
-            console.log(error);
-        } finally {
-            isLoading.value = false
-        }
+const type = useField("type");
+const title = useField("title");
+const description = useField("description");
+const salary = useField("salary");
+const location = useField("location");
+const companyName = useField("companyName");
+const companyDescription = useField("companyDescription");
+const contactEmail = useField("contactEmail");
+const contactPhone = useField("contactPhone");
+
+// Submit Form
+const submit = handleSubmit(async (values) => {
+  try {
+    isLoading.value = true;
+    const response = await axios.put(`http://localhost:5100/jobs/${jobId}`, {
+      type: values.type,
+      title: values.title,
+      description: values.description,
+      salary: values.salary,
+      location: values.location,
+      company: {
+        name: values.companyName,
+        description: values.companyDescription,
+        contactEmail: values.contactEmail,
+        contactPhone: values.contactPhone,
+      },
     });
+
+    toast.success("Job updated successfully");
+    router.push(`/jobs/${response.data.id}`);
+  } catch (error) {
+    console.log(error);
+    toast.error("Failed to update job");
+  } finally {
+    isLoading.value = false;
+  }
+});
+
+// Fetch Data dari API
+onMounted(async () => {
+  try {
+    isLoading.value = true;
+    const response = await axios.get(`http://localhost:5100/jobs/${jobId}`);
+    const job = response.data;
+
+    type.value.value = job.type;
+    title.value.value = job.title;
+    description.value.value = job.description;
+    salary.value.value = job.salary;
+    location.value.value = job.location;
+    companyName.value.value = job.company.name;
+    companyDescription.value.value = job.company.description;
+    contactEmail.value.value = job.company.contactEmail;
+    contactPhone.value.value = job.company.contactPhone;
+  } catch (error) {
+    console.log(error);
+  } finally {
+    isLoading.value = false;
+  }
+});
 </script>
 
 <template>
-    <div v-if="isLoading" class="text-center text-gray-500 py-6">
-        <PulseLoader />
+  <div v-if="isLoading" class="text-center text-gray-500 py-6">
+    <PulseLoader />
+  </div>
+  <section v-else class="bg-green-50">
+    <div class="container m-auto max-w-2xl py-24">
+      <div class="bg-white px-6 py-8 mb-4 shadow-md rounded-md border m-4 md:m-0">
+        <form @submit="submit">
+          <h2 class="text-3xl text-center font-semibold mb-6">Edit Job</h2>
+
+          <!-- Job Type -->
+          <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Job Type</label>
+            <select v-model="type.value.value" class="border rounded w-full py-2 px-3">
+              <option value="">Select Option</option>
+              <option value="Full-Time">Full-Time</option>
+              <option value="Part-Time">Part-Time</option>
+              <option value="Remote">Remote</option>
+              <option value="Internship">Internship</option>
+            </select>
+            <p class="text-red-500 text-sm">{{ type.errorMessage.value }}</p>
+          </div>
+
+          <!-- Job Listing Name -->
+          <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Job Listing Name</label>
+            <input v-model="title.value.value" class="border rounded w-full py-2 px-3" placeholder="e.g., Vue Developer" />
+            <p class="text-red-500 text-sm">{{ title.errorMessage.value }}</p>
+          </div>
+
+          <!-- Description -->
+          <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Description</label>
+            <textarea v-model="description.value.value" class="border rounded w-full py-2 px-3" rows="4"></textarea>
+            <p class="text-red-500 text-sm">{{ description.errorMessage.value }}</p>
+          </div>
+
+          <!-- Salary -->
+          <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Salary</label>
+            <select v-model="salary.value.value" class="border rounded w-full py-2 px-3">
+              <option value="">Select Salary</option>
+              <option value="Under $50K">Under $50K</option>
+              <option value="$50K - $60K">$50K - $60K</option>
+              <option value="$60K - $70K">$60K - $70K</option>
+            </select>
+            <p class="text-red-500 text-sm">{{ salary.errorMessage.value }}</p>
+          </div>
+
+          <!-- Location -->
+          <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Location</label>
+            <input v-model="location.value.value" class="border rounded w-full py-2 px-3" />
+            <p class="text-red-500 text-sm">{{ location.errorMessage.value }}</p>
+          </div>
+
+          <h3 class="text-2xl mb-5">Company Info</h3>
+
+          <!-- Company Name -->
+          <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Company Name</label>
+            <input v-model="companyName.value.value" class="border rounded w-full py-2 px-3" />
+            <p class="text-red-500 text-sm">{{ companyName.errorMessage.value }}</p>
+          </div>
+
+          <!-- Contact Email -->
+          <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Contact Email</label>
+            <input v-model="contactEmail.value.value" type="email" class="border rounded w-full py-2 px-3" />
+            <p class="text-red-500 text-sm">{{ contactEmail.errorMessage.value }}</p>
+          </div>
+
+          <div>
+            <button class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full w-full">
+              Edit Job
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-    <section v-else class="bg-green-50">
-        <div class="container m-auto max-w-2xl py-24">
-            <div class="bg-white px-6 py-8 mb-4 shadow-md rounded-md border m-4 md:m-0">
-                <!-- Prevent agar, melakukan submit tanpa harus merefresh halaman -->
-                <form @submit.prevent="submit">
-                    <h2 class="text-3xl text-center font-semibold mb-6">Edit Job</h2>
-
-                    <div class="mb-4">
-                        <label for="type" class="block text-gray-700 font-bold mb-2">Job Type</label>
-                        <select v-model="job.type" id="type" name="type"
-                            class="border rounded w-full py-2 px-3" required>
-                            <option value="">Select Option</option>
-                            <option value="Full-Time">Full-Time</option>
-                            <option value="Part-Time">Part-Time</option>
-                            <option value="Remote">Remote</option>
-                            <option value="Internship">Internship</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="block text-gray-700 font-bold mb-2">Job Listing Name</label>
-                        <input v-model="job.title" type="text" id="name" name="name"
-                            class="border rounded w-full py-2 px-3 mb-2" placeholder="eg. Vue Developer" required />
-                    </div>
-                    <div class="mb-4">
-                        <label for="description" class="block text-gray-700 font-bold mb-2">Description</label>
-                        <textarea v-model="job.description" id="description" name="description" class="border rounded w-full py-2 px-3"
-                            rows="4" placeholder="Add any job duties, expectations, requirements, etc"></textarea>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="type" class="block text-gray-700 font-bold mb-2">Salary</label>
-                        <select v-model="job.salary" id="salary" name="salary"
-                            class="border rounded w-full py-2 px-3" required>
-                            <option value="">Select Salary</option>
-                            <option value="Under $50K">under $50K</option>
-                            <option value="$50K - $60K">$50 - $60K</option>
-                            <option value="$60K - $70K">$60 - $70K</option>
-                            <option value="$70K - $80K">$70 - $80K</option>
-                            <option value="$80K - $90K">$80 - $90K</option>
-                            <option value="$90K - $100K">$90 - $100K</option>
-                            <option value="$100K - $125K">$100 - $125K</option>
-                            <option value="$125K - $150K">$125 - $150K</option>
-                            <option value="$150K - $175K">$150 - $175K</option>
-                            <option value="$175K - $200K">$175 - $200K</option>
-                            <option value="Over $200K">Over $200K</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="block text-gray-700 font-bold mb-2">
-                            Location
-                        </label>
-                        <input v-model="job.location" type="text" id="location" name="location"
-                            class="border rounded w-full py-2 px-3 mb-2" placeholder="Company Location" required />
-                    </div>
-
-                    <h3 class="text-2xl mb-5">Company Info</h3>
-
-                    <div class="mb-4">
-                        <label for="company" class="block text-gray-700 font-bold mb-2">Company Name</label>
-                        <input v-model="job.company.name" type="text" id="company" name="company"
-                            class="border rounded w-full py-2 px-3" placeholder="Company Name" />
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="company_description" class="block text-gray-700 font-bold mb-2">Company
-                            Description</label>
-                        <textarea v-model="job.company.description" id="company_description" name="company_description"
-                            class="border rounded w-full py-2 px-3" rows="4" placeholder="What does your company do?"></textarea>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="contact_email" class="block text-gray-700 font-bold mb-2">Contact Email</label>
-                        <input v-model="job.company.contactEmail" type="email" id="contact_email"
-                            name="contact_email" class="border rounded w-full py-2 px-3"
-                            placeholder="Email address for applicants" required />
-                    </div>
-                    <div class="mb-4">
-                        <label for="contact_phone" class="block text-gray-700 font-bold mb-2">Contact Phone</label>
-                        <input v-model="job.company.contactPhone" type="tel" id="contact_phone"
-                            name="contact_phone" class="border rounded w-full py-2 px-3"
-                            placeholder="Optional phone for applicants" />
-                    </div>
-
-                    <div>
-                        <button
-                            class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline"
-                            type="submit">
-                            Edit Job
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </section>
+  </section>
 </template>

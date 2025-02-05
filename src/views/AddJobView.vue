@@ -65,6 +65,9 @@
         value: contactPhone
     } = useField("company.contactPhone");
 
+    const submitForm = handleSubmit((values) => {
+        console.log(values); // Output: { username: "...", email: "..." }
+    });
     // Fungsi submit form
     const submit = handleSubmit(async () => {
         const newJob = {
@@ -102,7 +105,7 @@
     <section v-else class="bg-green-50">
         <div class="container m-auto max-w-2xl py-24">
             <div class="bg-white px-6 py-8 mb-4 shadow-md rounded-md border m-4 md:m-0">
-                <form @submit.prevent="submit">
+                <form @submit.prevent="submitForm">
                     <h2 class="text-3xl text-center font-semibold mb-6">Add Job</h2>
 
                     <div class="mb-4">

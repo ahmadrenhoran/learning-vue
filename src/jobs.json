@@ -5,7 +5,7 @@
       "title": "Junior Vue Developer",
       "description": "We are seeking a talented Front-End Developer to join our team in Boston, MA. The ideal candidate will have strong skills in HTML, CSS, and JavaScript, with experience working with modern JavaScript frameworks such as Vue or Angular.",
       "salary": "$50K - $60K",
-      "location": "Depok, Jawa Barat, IDN",
+      "location": "Depok, Jawa Barat",
       "company": {
         "name": "Seleris Solutions",
         "description": "NewTek Solutions is a leading technology company specializing in web development and digital solutions. We pride ourselves on delivering high-quality products and services to our clients while fostering a collaborative and innovative work environment.",
@@ -222,6 +222,20 @@
         "description": "OptiCode Solutions provides consulting services to help businesses optimize their software and processes.",
         "contactEmail": "consulting@opticode.com",
         "contactPhone": "555-654-3210"
+      }
+    },
+    {
+      "id": "6270",
+      "type": "Part-Time",
+      "title": "asdsad",
+      "description": "sad",
+      "salary": "$60K - $70K",
+      "location": "asd",
+      "company": {
+        "name": "asd",
+        "description": "sad",
+        "contactEmail": "ahmadmaulana3219@gmail.com",
+        "contactPhone": "081292497741"
       }
     }
   ]
