@@ -20,7 +20,12 @@
 
     const {
         handleSubmit
-    } = useForm();
+    } = useForm({
+        initialValues: {
+            type: "",
+            salary: "",
+        }
+    });
 
     const {
         value: type,
